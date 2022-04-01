@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:isolate';
 
 class ReliableIntervalTimer {
-  static const _isolateTimerDurationMicroseconds = 500;
+  static const _isolateTimerDurationMicroseconds = 250;
 
   /// Specifies the time that should lie in between execution of [callback]. Must not be smaller then one millisecond.
   final Duration interval;
