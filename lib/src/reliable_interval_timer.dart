@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:isolate';
 
 class ReliableIntervalTimer {
-  static const _isolateTimerDurationMicroseconds = 250;
+  static const _isolateTimerDurationMicroseconds = 500;
 
   /// Specifies the time that should lie in between execution of [callback]. Must not be smaller then one millisecond.
   final Duration interval;
@@ -26,7 +26,7 @@ class ReliableIntervalTimer {
   /// Starts the timer, the future completes once the timer completed the first accurate interval.
   Future<void> start() async {
     if (_isolate != null) {
-      throw Exception('Timer is already running! Use stop() the stop it before restarting.');
+      throw Exception('Timer is already running! Use stop() to stop it before restarting.');
     }
 
     var completer = Completer();

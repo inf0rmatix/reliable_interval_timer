@@ -14,6 +14,7 @@ void main() {
       var inAccurateTicks = 0;
       double overallDeviation = 0;
       int millisLastTick = 0;
+      List<String> inAccurateTickInfos = [];
 
       var completer = Completer();
 
@@ -32,7 +33,10 @@ void main() {
 
           if (duration != interval && ticksOverall > 0) {
             inAccurateTicks++;
-            overallDeviation += (duration - interval).abs();
+            var deviation = (duration - interval).abs();
+            overallDeviation += deviation;
+
+            inAccurateTickInfos.add('Tick #$ticksOverall deviated by $deviation ms');
           }
 
           if (ticksOverall == targetTicks) {
@@ -46,6 +50,12 @@ void main() {
       await completer.future;
 
       await timer.stop();
+
+      for (String text in inAccurateTickInfos) {
+        print(text);
+      }
+
+      print('Inaccurate ticks $inAccurateTicks');
 
       expect(inAccurateTicks, isZero);
       expect(overallDeviation, isZero);
