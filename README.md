@@ -26,3 +26,7 @@ ReliableIntervalTimer(
     callback: (elapsedMilliseconds) => print('elapsedMilliseconds: $elapsedMilliseconds');,
 );
 ```
+
+## Additional information
+
+After doing some testing, I figured out that this will run reliably on client devices, on server side I encountered issues with inaccurate timings.
