@@ -1,6 +1,7 @@
 name: reliable_interval_timer
 description: A timer that produces ticks within a given interval, accurate to the millisecond.
 version: 1.0.0
+repository: https://github.com/1nf0rmatix/reliable_interval_timer
 # homepage: https://www.example.com
 
 environment:
