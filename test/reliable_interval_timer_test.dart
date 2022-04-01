@@ -18,8 +18,8 @@ void main() {
       var completer = Completer();
 
       var timer = ReliableIntervalTimer(
-        intervall: Duration(milliseconds: interval),
-        callback: () {
+        interval: Duration(milliseconds: interval),
+        callback: (elapsed) {
           if (ticksOverall >= targetTicks) {
             return;
           }
@@ -56,7 +56,7 @@ void main() {
       ReliableIntervalTimer? timer;
 
       try {
-        timer = ReliableIntervalTimer(intervall: Duration(microseconds: 900), callback: () {});
+        timer = ReliableIntervalTimer(interval: Duration(microseconds: 900), callback: (_) {});
       } catch (_) {
         // ignored
       }

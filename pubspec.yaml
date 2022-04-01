@@ -1,11 +1,10 @@
 name: reliable_interval_timer
-description: A starting point for Dart libraries or applications.
+description: A timer that produces ticks within a given interval, accurate to the millisecond.
 version: 1.0.0
 # homepage: https://www.example.com
 
 environment:
-  sdk: '>=2.16.2 <3.0.0'
-
+  sdk: ">=2.16.2 <3.0.0"
 
 # dependencies:
 #   path: ^1.8.0
