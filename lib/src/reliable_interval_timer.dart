@@ -24,7 +24,7 @@ class ReliableIntervalTimer {
   }) : assert(interval.inMilliseconds > 0, 'Intervals smaller than a millisecond are not supported');
 
   /// Checks if the timer is running
-  bool get isRunning => return _isolate != null;
+  bool get isRunning => _isolate != null;
 
   /// Starts the timer, the future completes once the timer completed the first accurate interval.
   Future<void> start() async {
