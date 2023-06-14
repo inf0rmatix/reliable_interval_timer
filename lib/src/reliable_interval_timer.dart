@@ -4,14 +4,14 @@ import 'dart:isolate';
 class ReliableIntervalTimer {
   static const _isolateTimerDurationMicroseconds = 500;
 
-  /// Specifies the time that should lie in between execution of [callback]. Must not be smaller then one millisecond.
-  final Duration interval;
+  Duration interval;
 
-  /// The function is passed [elapsedMilliseconds] after the last tick and executed once every [interval].
   final Function(int elapsedMilliseconds) callback;
 
   Isolate? _isolate;
   StreamSubscription? _isolateSubscription;
+
+  SendPort? _childSendPort;
 
   bool _isWarmingUp = true;
   bool _isReady = false;
@@ -23,10 +23,6 @@ class ReliableIntervalTimer {
     required this.callback,
   }) : assert(interval.inMilliseconds > 0, 'Intervals smaller than a millisecond are not supported');
 
-  /// Checks if the timer is running
-  bool get isRunning => _isolate != null;
-
-  /// Starts the timer, the future completes once the timer completed the first accurate interval.
   Future<void> start() async {
     if (_isolate != null) {
       throw Exception('Timer is already running! Use stop() to stop it before restarting.');
@@ -35,27 +31,40 @@ class ReliableIntervalTimer {
     var completer = Completer();
 
     ReceivePort receiveFromIsolatePort = ReceivePort();
+    ReceivePort childSendPort = ReceivePort();
 
     _isolate = await Isolate.spawn(
       _isolateTimer,
       {
         'tickRate': interval.inMilliseconds,
         'sendToMainThreadPort': receiveFromIsolatePort.sendPort,
+        'childSendPort': childSendPort.sendPort,
       },
     );
 
-    _isolateSubscription = receiveFromIsolatePort.listen((_) => _onIsolateTimerTick(completer));
+    _isolateSubscription = receiveFromIsolatePort.listen((data) {
+      if (data is SendPort) {
+        _childSendPort = data;
+      } else {
+        _onIsolateTimerTick(completer);
+      }
+    });
 
     return completer.future;
   }
 
-  /// Stops the timer, canceling the subscription and killing the isolate.
   Future<void> stop() async {
     await _isolateSubscription?.cancel();
     _isolateSubscription = null;
 
     _isolate?.kill();
     _isolate = null;
+    _childSendPort = null;
+  }
+
+  Future<void> updateInterval(Duration newInterval) async {
+    interval = newInterval;
+    _childSendPort?.send(newInterval.inMilliseconds);
   }
 
   void _onIsolateTimerTick(Completer completer) {
@@ -78,8 +87,18 @@ class ReliableIntervalTimer {
   static Future<void> _isolateTimer(Map data) async {
     int tickRate = data['tickRate'];
     SendPort sendToMainThreadPort = data['sendToMainThreadPort'];
+    SendPort childSendPort = data['childSendPort'];
 
     var millisLastTick = DateTime.now().millisecondsSinceEpoch;
+
+    ReceivePort receivePort = ReceivePort();
+    sendToMainThreadPort.send(receivePort.sendPort);
+
+    receivePort.listen((newTickRate) {
+      if (newTickRate is int) {
+        tickRate = newTickRate;
+      }
+    });
 
     Timer.periodic(
       const Duration(microseconds: _isolateTimerDurationMicroseconds),
