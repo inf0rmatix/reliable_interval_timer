@@ -4,12 +4,17 @@ import 'dart:isolate';
 class ReliableIntervalTimer {
   static const _isolateTimerDurationMicroseconds = 500;
 
+  /// Specifies the time that should lie in between execution of [callback].
+  /// Must not be smaller then one millisecond. This value can be updated with updateInterval() method.
   Duration interval;
-  
+
+  /// The function is passed [elapsedMilliseconds] after the last tick and executed once every [interval].
   final Function(int elapsedMilliseconds) callback;
 
   Isolate? _isolate;
   StreamSubscription? _isolateSubscription;
+
+  /// The port to send updates for tick rate to the isolate.
   SendPort? _tickRateUpdatePort;
 
   bool _isWarmingUp = true;
@@ -20,13 +25,17 @@ class ReliableIntervalTimer {
   ReliableIntervalTimer({
     required this.interval,
     required this.callback,
-  }) : assert(interval.inMilliseconds > 0, 'Intervals smaller than a millisecond are not supported');
+  }) : assert(interval.inMilliseconds > 0,
+            'Intervals smaller than a millisecond are not supported');
 
+  /// Checks if the timer is running
   bool get isRunning => _isolate != null;
 
+  /// Starts the timer, the future completes once the timer completed the first accurate interval.
   Future<void> start() async {
     if (_isolate != null) {
-      throw Exception('Timer is already running! Use stop() to stop it before restarting.');
+      throw Exception(
+          'Timer is already running! Use stop() to stop it before restarting.');
     }
 
     var completer = Completer();
@@ -51,6 +60,7 @@ class ReliableIntervalTimer {
     return completer.future;
   }
 
+  /// Stops the timer, canceling the subscription and killing the isolate.
   Future<void> stop() async {
     await _isolateSubscription?.cancel();
     _isolateSubscription = null;
@@ -60,7 +70,8 @@ class ReliableIntervalTimer {
     _tickRateUpdatePort = null;
   }
 
-  Future<void> updateTickRate(Duration newInterval) async {
+  /// Updates the timer interval, allowing the timer interval to be changed without spawning another isolate.
+  Future<void> updateInterval(Duration newInterval) async {
     interval = newInterval;
     _tickRateUpdatePort?.send(newInterval.inMilliseconds);
   }
