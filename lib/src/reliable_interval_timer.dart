@@ -4,8 +4,10 @@ import 'dart:isolate';
 class ReliableIntervalTimer {
   static const _isolateTimerDurationMicroseconds = 500;
 
-  Duration interval;
+  /// Specifies the time that should lie in between execution of [callback]. Must not be smaller then one millisecond.
+  final Duration interval;
 
+  /// The function is passed [elapsedMilliseconds] after the last tick and executed once every [interval].
   final Function(int elapsedMilliseconds) callback;
 
   Isolate? _isolate;
@@ -23,6 +25,10 @@ class ReliableIntervalTimer {
     required this.callback,
   }) : assert(interval.inMilliseconds > 0, 'Intervals smaller than a millisecond are not supported');
 
+  /// Checks if the timer is running
+  bool get isRunning => _isolate != null;
+
+  /// Starts the timer, the future completes once the timer completed the first accurate interval.
   Future<void> start() async {
     if (_isolate != null) {
       throw Exception('Timer is already running! Use stop() to stop it before restarting.');
@@ -52,7 +58,8 @@ class ReliableIntervalTimer {
 
     return completer.future;
   }
-
+  
+  /// Stops the timer, canceling the subscription and killing the isolate.
   Future<void> stop() async {
     await _isolateSubscription?.cancel();
     _isolateSubscription = null;
