@@ -25,8 +25,7 @@ class ReliableIntervalTimer {
   ReliableIntervalTimer({
     required this.interval,
     required this.callback,
-  }) : assert(interval.inMilliseconds > 0,
-            'Intervals smaller than a millisecond are not supported');
+  }) : assert(interval.inMilliseconds > 0, 'Intervals smaller than a millisecond are not supported');
 
   /// Checks if the timer is running
   bool get isRunning => _isolate != null;
@@ -34,8 +33,7 @@ class ReliableIntervalTimer {
   /// Starts the timer, the future completes once the timer completed the first accurate interval.
   Future<void> start() async {
     if (_isolate != null) {
-      throw Exception(
-          'Timer is already running! Use stop() to stop it before restarting.');
+      throw Exception('Timer is already running! Use stop() to stop it before restarting.');
     }
 
     var completer = Completer();

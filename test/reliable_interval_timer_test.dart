@@ -36,8 +36,7 @@ void main() {
             var deviation = (duration - interval).abs();
             overallDeviation += deviation;
 
-            inAccurateTickInfos
-                .add('Tick #$ticksOverall deviated by $deviation ms');
+            inAccurateTickInfos.add('Tick #$ticksOverall deviated by $deviation ms');
           }
 
           if (ticksOverall == targetTicks) {
@@ -67,8 +66,7 @@ void main() {
       ReliableIntervalTimer? timer;
 
       try {
-        timer = ReliableIntervalTimer(
-            interval: Duration(microseconds: 900), callback: (_) {});
+        timer = ReliableIntervalTimer(interval: Duration(microseconds: 900), callback: (_) {});
       } catch (_) {
         // ignored
       }
@@ -76,8 +74,7 @@ void main() {
       expect(timer, isNull);
     });
 
-    test('should update interval and provide ticks without any deviation',
-        () async {
+    test('should update interval and provide ticks without any deviation', () async {
       const targetTicks = 100;
       const initialInterval = 10;
       const updatedInterval = 20;
@@ -109,16 +106,14 @@ void main() {
         var duration = now - millisLastTick;
         millisLastTick = now;
 
-        var expectedInterval =
-            ticksOverall <= 10 ? initialInterval : updatedInterval;
+        var expectedInterval = ticksOverall <= 10 ? initialInterval : updatedInterval;
 
         if (duration != expectedInterval && ticksOverall > 0) {
           inaccurateTicks++;
           var deviation = (duration - expectedInterval).abs();
           overallDeviation += deviation;
 
-          inaccurateTickInfos
-              .add('Tick #$ticksOverall deviated by $deviation ms');
+          inaccurateTickInfos.add('Tick #$ticksOverall deviated by $deviation ms');
         }
 
         if (ticksOverall == targetTicks) {
