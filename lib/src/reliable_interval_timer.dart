@@ -4,14 +4,18 @@ import 'dart:isolate';
 class ReliableIntervalTimer {
   static const _isolateTimerDurationMicroseconds = 500;
 
-  /// Specifies the time that should lie in between execution of [callback]. Must not be smaller then one millisecond.
-  final Duration interval;
+  /// Specifies the time that should lie in between execution of [callback].
+  /// Must not be smaller then one millisecond. This value can be updated with updateInterval() method.
+  Duration interval;
 
   /// The function is passed [elapsedMilliseconds] after the last tick and executed once every [interval].
   final Function(int elapsedMilliseconds) callback;
 
   Isolate? _isolate;
   StreamSubscription? _isolateSubscription;
+
+  /// The port to send updates for tick rate to the isolate.
+  SendPort? _tickRateUpdatePort;
 
   bool _isWarmingUp = true;
   bool _isReady = false;
@@ -33,18 +37,23 @@ class ReliableIntervalTimer {
     }
 
     var completer = Completer();
-
-    ReceivePort receiveFromIsolatePort = ReceivePort();
+    var receivePort = ReceivePort();
 
     _isolate = await Isolate.spawn(
       _isolateTimer,
       {
         'tickRate': interval.inMilliseconds,
-        'sendToMainThreadPort': receiveFromIsolatePort.sendPort,
+        'sendToMainThreadPort': receivePort.sendPort,
       },
     );
 
-    _isolateSubscription = receiveFromIsolatePort.listen((_) => _onIsolateTimerTick(completer));
+    _isolateSubscription = receivePort.listen((message) {
+      if (message is SendPort) {
+        _tickRateUpdatePort = message;
+      } else {
+        _onIsolateTimerTick(completer);
+      }
+    });
 
     return completer.future;
   }
@@ -56,6 +65,13 @@ class ReliableIntervalTimer {
 
     _isolate?.kill();
     _isolate = null;
+    _tickRateUpdatePort = null;
+  }
+
+  /// Updates the timer interval, allowing the timer interval to be changed without spawning another isolate.
+  Future<void> updateInterval(Duration newInterval) async {
+    interval = newInterval;
+    _tickRateUpdatePort?.send(newInterval.inMilliseconds);
   }
 
   void _onIsolateTimerTick(Completer completer) {
@@ -78,6 +94,15 @@ class ReliableIntervalTimer {
   static Future<void> _isolateTimer(Map data) async {
     int tickRate = data['tickRate'];
     SendPort sendToMainThreadPort = data['sendToMainThreadPort'];
+
+    var updatePort = ReceivePort();
+    sendToMainThreadPort.send(updatePort.sendPort);
+
+    updatePort.listen((newTickRate) {
+      if (newTickRate is int) {
+        tickRate = newTickRate;
+      }
+    });
 
     var millisLastTick = DateTime.now().millisecondsSinceEpoch;
 
